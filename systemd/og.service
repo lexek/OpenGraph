@@ -1,0 +1,12 @@
+[Unit]
+Description="og"
+
+[Service]
+Group=og
+User=og
+WorkingDirectory=/opt/og/
+ExecStart=/usr/bin/java -Xmx256m -jar /opt/og/og-0.0.1-SNAPSHOT.jar
+Restart=always
+
+[Install]
+WantedBy=default.target
