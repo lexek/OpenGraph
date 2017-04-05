@@ -34,9 +34,10 @@ public class FetcherService {
     private long maxSupportedRedirects = 1;
 
     private final HttpClient httpClient;
+    private final LoadingCache<String, Mono<Map<String, String>>> cache;
 
     public FetcherService() {
-        httpClient = HttpClient.create(
+        this.httpClient = HttpClient.create(
             options -> {
                 options.sslSupport();
                 options.afterChannelInit(channel ->
@@ -45,6 +46,11 @@ public class FetcherService {
                 );
             }
         );
+        this.cache = Caffeine
+            .<String, Mono<Map<String, String>>>newBuilder()
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .maximumSize(500)
+            .build(this::doFetch);
     }
 
     @Value("${og.maxBodySize ?: 8388608}")
@@ -56,12 +62,6 @@ public class FetcherService {
     public void setMaxSupportedRedirects(long maxSupportedRedirects) {
         this.maxSupportedRedirects = maxSupportedRedirects;
     }
-
-    private final LoadingCache<String, Mono<Map<String, String>>> cache = Caffeine
-        .<String, Mono<Map<String, String>>>newBuilder()
-        .expireAfterAccess(10, TimeUnit.MINUTES)
-        .maximumSize(500)
-        .build(this::doFetch);
 
     public Mono<Map<String, String>> fetch(String url) {
         if (StringUtils.isEmpty(url)) {
