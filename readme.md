@@ -1,7 +1,7 @@
 # OpenGraph service 
 Name is subject to change.
 
-This is very basic Open Graph scraper build with Spring 5 reactive web
+This is very basic Open Graph scraper built with Spring 5 web reactive framework
 
 ## Features
 
