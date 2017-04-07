@@ -34,8 +34,9 @@ Notable properties:
 * `server.port` - which port to use
 * `logging.*` - logging configuration.
 More information [here](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-logging.html).
-* `og.maxBodySize` - maximum body size for received page body (default 8mb)
-* `og.maxSupportedRedirects` - maximum allowed number of consequent redirects to handle
+* `og.maxBodySize` - maximum body size in bytes for received page body **(default: 8mb)**
+* `og.maxSupportedRedirects` - maximum allowed number of consequent redirects to handle **(default: `1`)**
+* `og.handleNonStandardPorts` - enable handling of resources on non-standard ports. Standard ports are: 443 for https, 80 for http. **(default: `false`)**
 * For CORS configuration look [CORS support](#cors-support)
 * todo: cache config (not implemented yet #1)
 
