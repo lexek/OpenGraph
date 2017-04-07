@@ -11,6 +11,8 @@ import io.netty.handler.codec.http.HttpUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -30,11 +32,13 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class FetcherService {
-    private long maxBodySize = 8388608;
-    private long maxSupportedRedirects = 1;
-
+    private final Logger logger = LoggerFactory.getLogger(FetcherService.class);
     private final HttpClient httpClient;
     private final LoadingCache<String, Mono<Map<String, String>>> cache;
+
+    private long maxBodySize = 8388608;
+    private long maxSupportedRedirects = 1;
+    private boolean handleNonStandardPorts = false;
 
     public FetcherService() {
         this.httpClient = HttpClient.create(
@@ -63,6 +67,11 @@ public class FetcherService {
         this.maxSupportedRedirects = maxSupportedRedirects;
     }
 
+    @Value("${og.handleNonStandardPorts ?: false}")
+    public void setHandleNonStandardPorts(boolean handleNonStandardPorts) {
+        this.handleNonStandardPorts = handleNonStandardPorts;
+    }
+
     public Mono<Map<String, String>> fetch(String url) {
         if (StringUtils.isEmpty(url)) {
             return Mono.just(ImmutableMap.of("error", "Url is not present"));
@@ -84,15 +93,30 @@ public class FetcherService {
 
     private Mono<Map<String, String>> doFetch(URL url, int redirectNumber) {
         if (redirectNumber > maxSupportedRedirects) {
-            return Mono.just(ImmutableMap.of("error", "Too many consequent redirects"));
+            return Mono.just(ImmutableMap.of(
+                "error", "Too many consequent redirects"
+            ));
+        }
+        if (!handleNonStandardPorts) {
+            int port = url.getPort();
+            if (port != -1) {
+                if (url.getProtocol().equals("http") && port != 80 || url.getProtocol().equals("https") && port != 443) {
+                    return Mono.just(ImmutableMap.of(
+                        "error", "Handling of non-standard ports is disabled"
+                    ));
+                }
+            }
         }
         return httpClient
             .get(url.toExternalForm())
             .map(ReactorRequestWrapper::new)
             .then(response -> handleResponse(url, response, redirectNumber))
+            .doOnError(throwable -> logger.warn("caught exception", throwable))
+            .otherwise((e) -> Mono.just(ImmutableMap.of(
+                "error", e.getMessage() != null ? e.getMessage() : e.getClass().toString()
+            )))
             .cache()
-            .timeout(Duration.of(30, ChronoUnit.SECONDS))
-            .doOnError(throwable -> Mono.just(ImmutableMap.of("error", throwable.getMessage() != null ? throwable.getMessage() : throwable.getClass())));
+            .timeout(Duration.of(30, ChronoUnit.SECONDS));
     }
 
     private Mono<Map<String, String>> handleResponse(URL url, ReactorRequestWrapper response, int redirectNumber) {
