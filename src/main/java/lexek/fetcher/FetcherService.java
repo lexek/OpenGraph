@@ -89,7 +89,10 @@ public class FetcherService {
             }
         }
         return httpClient
-            .get(url.toExternalForm())
+            .get(
+                url.toExternalForm(),
+                request -> request.failOnServerError(false).failOnClientError(false) //disable exceptions on 4xx & 5xx statuses
+            )
             .map(ReactorRequestWrapper::new)
             .then(response -> handleResponse(url, response, redirectNumber))
             .doOnError(throwable -> logger.warn("caught exception", throwable))
