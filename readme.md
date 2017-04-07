@@ -8,7 +8,7 @@ This is very basic Open Graph scraper built with Spring 5 web reactive framework
 What's all the bells and whistles this project can perform?
 * Scrapping OpenGraph meta information from web pages
 * Can follow 301/302 redirects
-* Some additional meta information also provided (host name, title tag content)
+* Some additional meta information also provided (host name, mime type, title tag content)
 
 ## Running
 

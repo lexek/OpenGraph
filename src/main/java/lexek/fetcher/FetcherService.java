@@ -89,18 +89,13 @@ public class FetcherService {
         return httpClient
             .get(url.toExternalForm())
             .map(ReactorRequestWrapper::new)
-            .then(response -> handleResponse(response, redirectNumber))
-            .doOnNext(result -> {
-                if (!result.containsKey("error")) {
-                    result.put("hostname", url.getHost());
-                }
-            })
+            .then(response -> handleResponse(url, response, redirectNumber))
             .cache()
             .timeout(Duration.of(30, ChronoUnit.SECONDS))
             .doOnError(throwable -> Mono.just(ImmutableMap.of("error", throwable.getMessage() != null ? throwable.getMessage() : throwable.getClass())));
     }
 
-    private Mono<Map<String, String>> handleResponse(ReactorRequestWrapper response, int redirectNumber) {
+    private Mono<Map<String, String>> handleResponse(URL url, ReactorRequestWrapper response, int redirectNumber) {
         int status = response.status();
         if (status == 301 || status == 302) {
             String location = response.headers().get(HttpHeaderNames.LOCATION);
@@ -117,16 +112,28 @@ public class FetcherService {
             return Mono.just(ImmutableMap.of("error", "No content-type"));
         }
         if (!Objects.equals(mimeType, "text/html")) {
-            return Mono.just(ImmutableMap.of("error", "Unsupported content-type " + mimeType));
+            return Mono.just(ImmutableMap.of(
+                "error", "Unsupported content-type",
+                "mime", mimeType.toString()
+            ));
         }
         long contentLength = HttpUtil.getContentLength(response, -1);
         if (contentLength > maxBodySize) {
-            return Mono.just(ImmutableMap.of("error", "Content is too big"));
+            return Mono.just(ImmutableMap.of(
+                "error", "Content is too big",
+                "mime", mimeType.toString()
+            ));
         }
         return readyBody(response)
             .cast(String.class)
             .map(Jsoup::parse)
-            .map(FetcherService::parseBody);
+            .map(FetcherService::parseBody)
+            .doOnNext(result -> {
+                if (!result.containsKey("error")) {
+                    result.put("hostname", url.getHost());
+                    result.put("mime", mimeType.toString());
+                }
+            });
     }
 
     private Mono<String> readyBody(ReactorRequestWrapper response) {
