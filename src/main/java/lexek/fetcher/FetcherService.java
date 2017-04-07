@@ -54,7 +54,7 @@ public class FetcherService {
             .<String, Mono<Map<String, String>>>newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .maximumSize(500)
-            .build(this::doFetch);
+            .build(url -> validateUrlAndFetch(url, 0));
     }
 
     public Mono<Map<String, String>> fetch(String url) {
@@ -62,10 +62,6 @@ public class FetcherService {
             return Mono.just(ImmutableMap.of("error", "Url is not present"));
         }
         return cache.get(url);
-    }
-
-    private Mono<Map<String, String>> doFetch(String url) {
-        return validateUrlAndFetch(url, 0);
     }
 
     private Mono<Map<String, String>> validateUrlAndFetch(String url, int redirect) {
