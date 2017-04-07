@@ -57,21 +57,6 @@ public class FetcherService {
             .build(this::doFetch);
     }
 
-    @Value("${og.maxBodySize ?: 8388608}")
-    public void setMaxBodySize(long maxBodySize) {
-        this.maxBodySize = maxBodySize;
-    }
-
-    @Value("${og.maxSupportedRedirects ?: 1}")
-    public void setMaxSupportedRedirects(long maxSupportedRedirects) {
-        this.maxSupportedRedirects = maxSupportedRedirects;
-    }
-
-    @Value("${og.handleNonStandardPorts ?: false}")
-    public void setHandleNonStandardPorts(boolean handleNonStandardPorts) {
-        this.handleNonStandardPorts = handleNonStandardPorts;
-    }
-
     public Mono<Map<String, String>> fetch(String url) {
         if (StringUtils.isEmpty(url)) {
             return Mono.just(ImmutableMap.of("error", "Url is not present"));
@@ -197,5 +182,20 @@ public class FetcherService {
             }
         }
         return result;
+    }
+
+    @Value("${og.maxBodySize ?: 8388608}")
+    public void setMaxBodySize(long maxBodySize) {
+        this.maxBodySize = maxBodySize;
+    }
+
+    @Value("${og.maxSupportedRedirects ?: 1}")
+    public void setMaxSupportedRedirects(long maxSupportedRedirects) {
+        this.maxSupportedRedirects = maxSupportedRedirects;
+    }
+
+    @Value("${og.handleNonStandardPorts ?: false}")
+    public void setHandleNonStandardPorts(boolean handleNonStandardPorts) {
+        this.handleNonStandardPorts = handleNonStandardPorts;
     }
 }
