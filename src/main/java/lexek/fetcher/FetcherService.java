@@ -95,12 +95,13 @@ public class FetcherService {
             )
             .map(ReactorRequestWrapper::new)
             .then(response -> handleResponse(url, response, redirectNumber))
+            .timeout(Duration.of(10, ChronoUnit.SECONDS))
+            .retry(3)
             .doOnError(throwable -> logger.warn("caught exception", throwable))
             .otherwise((e) -> Mono.just(ImmutableMap.of(
                 "error", e.getMessage() != null ? e.getMessage() : e.getClass().toString()
             )))
-            .cache()
-            .timeout(Duration.of(30, ChronoUnit.SECONDS));
+            .cache();
     }
 
     private Mono<Map<String, String>> handleResponse(URL url, ReactorRequestWrapper response, int redirectNumber) {
