@@ -59,4 +59,8 @@ public class ReactorRequestWrapper implements HttpMessage {
     public HttpClientResponse originalResponse() {
         return response;
     }
+
+    public void dispose() {
+        response.dispose();
+    }
 }

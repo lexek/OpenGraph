@@ -53,7 +53,7 @@ public class FetcherService {
         this.cache = Caffeine
             .<String, Mono<Map<String, String>>>newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
-            .maximumSize(500)
+            .maximumSize(1000)
             .build(url -> validateUrlAndFetch(url, 0));
     }
 
@@ -109,18 +109,23 @@ public class FetcherService {
         if (status == 301 || status == 302) {
             String location = response.headers().get(HttpHeaderNames.LOCATION);
             if (location == null) {
+                response.dispose();
                 return Mono.just(ImmutableMap.of("error", "Http redirect without location header"));
             }
+            response.dispose();
             return validateUrlAndFetch(location, redirectNumber + 1);
         }
         if (status != 200) {
+            response.dispose();
             return Mono.just(ImmutableMap.of("error", "Invalid response status " + status));
         }
         CharSequence mimeType = HttpUtil.getMimeType(response);
         if (mimeType == null) {
+            response.dispose();
             return Mono.just(ImmutableMap.of("error", "No content-type"));
         }
         if (!Objects.equals(mimeType, "text/html")) {
+            response.dispose();
             return Mono.just(ImmutableMap.of(
                 "error", "Unsupported content-type",
                 "mime", mimeType.toString()
@@ -128,6 +133,7 @@ public class FetcherService {
         }
         long contentLength = HttpUtil.getContentLength(response, -1);
         if (contentLength > maxBodySize) {
+            response.dispose();
             return Mono.just(ImmutableMap.of(
                 "error", "Content is too big",
                 "mime", mimeType.toString()
