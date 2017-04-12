@@ -64,7 +64,7 @@ public class FetcherService {
         }
         return Mono
             .fromFuture(cache.get(url))
-            .then(Function.identity());
+            .flatMap(Function.identity());
     }
 
     private Mono<Map<String, String>> validateUrlAndFetch(String url, int redirect) {
@@ -97,7 +97,7 @@ public class FetcherService {
                 request -> request.failOnServerError(false).failOnClientError(false) //disable exceptions on 4xx & 5xx statuses
             )
             .map(ReactorRequestWrapper::new)
-            .then(response -> handleResponse(url, response, redirectNumber))
+            .flatMap(response -> handleResponse(url, response, redirectNumber))
             .timeout(Duration.of(10, ChronoUnit.SECONDS))
             .retry(3)
             .doOnError(throwable -> logger.warn("caught exception", throwable))
