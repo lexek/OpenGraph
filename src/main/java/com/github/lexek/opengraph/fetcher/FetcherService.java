@@ -53,7 +53,7 @@ public class FetcherService {
         );
         this.cache = Caffeine
             .<String, Mono<Map<String, String>>>newBuilder()
-            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .expireAfterAccess(20, TimeUnit.MINUTES)
             .maximumSize(1000)
             .buildAsync(url -> validateUrlAndFetch(url, 0));
     }
