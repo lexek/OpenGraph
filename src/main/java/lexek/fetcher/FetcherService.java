@@ -1,5 +1,6 @@
 package lexek.fetcher;
 
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
@@ -7,6 +8,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -29,12 +31,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 @Service
 public class FetcherService {
     private final Logger logger = LoggerFactory.getLogger(FetcherService.class);
     private final HttpClient httpClient;
-    private final LoadingCache<String, Mono<Map<String, String>>> cache;
+    private final AsyncLoadingCache<String, Mono<Map<String, String>>> cache;
 
     private long maxBodySize = 8388608;
     private long maxSupportedRedirects = 1;
@@ -54,14 +57,16 @@ public class FetcherService {
             .<String, Mono<Map<String, String>>>newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES)
             .maximumSize(1000)
-            .build(url -> validateUrlAndFetch(url, 0));
+            .buildAsync(url -> validateUrlAndFetch(url, 0));
     }
 
     public Mono<Map<String, String>> fetch(String url) {
         if (StringUtils.isEmpty(url)) {
             return Mono.just(ImmutableMap.of("error", "Url is not present"));
         }
-        return cache.get(url);
+        return Mono
+            .fromFuture(cache.get(url))
+            .then(Function.identity());
     }
 
     private Mono<Map<String, String>> validateUrlAndFetch(String url, int redirect) {
