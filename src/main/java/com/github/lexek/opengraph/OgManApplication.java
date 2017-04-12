@@ -1,4 +1,4 @@
-package lexek;
+package com.github.lexek.opengraph;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

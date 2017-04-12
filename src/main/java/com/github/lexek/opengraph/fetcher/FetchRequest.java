@@ -1,4 +1,4 @@
-package lexek.fetcher;
+package com.github.lexek.opengraph.fetcher;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

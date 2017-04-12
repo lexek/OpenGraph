@@ -1,4 +1,4 @@
-package lexek.fetcher;
+package com.github.lexek.opengraph.fetcher;
 
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
