@@ -158,6 +158,7 @@ public class FetcherService {
                 .originalResponse()
                 .receiveContent()
                 .map((content) -> buffer.writeBytes(content.content()))
+                // read into temp buffer until limit is reached or end or sequence
                 .all((ignore) -> buffer.readableBytes() < maxBodySize)
                 .then(() -> Mono.just(buffer.toString(charset))),
             ByteBuf::release
