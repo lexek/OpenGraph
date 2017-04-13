@@ -159,7 +159,6 @@ public class FetcherService {
                 .receiveContent()
                 .map((content) -> buffer.writeBytes(content.content()))
                 .all((ignore) -> buffer.readableBytes() < maxBodySize)
-                .then()
                 .then(() -> Mono.just(buffer.toString(charset))),
             ByteBuf::release
         );
