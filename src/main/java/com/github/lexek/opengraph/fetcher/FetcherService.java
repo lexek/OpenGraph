@@ -29,13 +29,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 @Service
 public class FetcherService {
     private final Logger logger = LoggerFactory.getLogger(FetcherService.class);
     private final HttpClient httpClient;
-    private final AsyncLoadingCache<String, Mono<Map<String, String>>> cache;
+    private final AsyncLoadingCache<String, Map<String, String>> cache;
 
     private long maxBodySize = 8388608;
     private long maxSupportedRedirects = 1;
@@ -55,16 +54,14 @@ public class FetcherService {
             .<String, Mono<Map<String, String>>>newBuilder()
             .expireAfterAccess(20, TimeUnit.MINUTES)
             .maximumSize(1000)
-            .buildAsync(url -> validateUrlAndFetch(url, 0));
+            .buildAsync((url, executor) -> validateUrlAndFetch(url, 0).toFuture());
     }
 
     public Mono<Map<String, String>> fetch(String url) {
         if (StringUtils.isEmpty(url)) {
             return Mono.just(ImmutableMap.of("error", "Url is not present"));
         }
-        return Mono
-            .fromFuture(cache.get(url))
-            .flatMap(Function.identity());
+        return Mono.fromFuture(cache.get(url));
     }
 
     private Mono<Map<String, String>> validateUrlAndFetch(String url, int redirect) {
@@ -103,8 +100,7 @@ public class FetcherService {
             .doOnError(throwable -> logger.warn("caught exception", throwable))
             .otherwise((e) -> Mono.just(ImmutableMap.of(
                 "error", e.getMessage() != null ? e.getMessage() : e.getClass().toString()
-            )))
-            .cache();
+            )));
     }
 
     private Mono<Map<String, String>> handleResponse(URL url, ReactorRequestWrapper response, int redirectNumber) {
