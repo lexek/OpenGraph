@@ -189,17 +189,17 @@ public class FetcherService {
         return result;
     }
 
-    @Value("${og.maxBodySize ?: 8388608}")
+    @Value("${og.maxBodySize:8388608}")
     public void setMaxBodySize(long maxBodySize) {
         this.maxBodySize = maxBodySize;
     }
 
-    @Value("${og.maxSupportedRedirects ?: 1}")
+    @Value("${og.maxSupportedRedirects:1}")
     public void setMaxSupportedRedirects(long maxSupportedRedirects) {
         this.maxSupportedRedirects = maxSupportedRedirects;
     }
 
-    @Value("${og.handleNonStandardPorts ?: false}")
+    @Value("${og.handleNonStandardPorts:false}")
     public void setHandleNonStandardPorts(boolean handleNonStandardPorts) {
         this.handleNonStandardPorts = handleNonStandardPorts;
     }
